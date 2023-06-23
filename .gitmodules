@@ -1,0 +1,3 @@
+[submodule "Imaginepy"]
+	path = Imaginepy
+	url = https://github.com/ItsCEED/Imaginepy.git
