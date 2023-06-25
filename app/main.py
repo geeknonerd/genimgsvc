@@ -1,12 +1,13 @@
+import os
 from typing import Union
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import Response
 from imaginepy import Imagine, Style, Ratio
 from pydantic import BaseModel, validator
 
+AUTH_TOKEN = os.getenv('TOKEN', '')
 app = FastAPI()
-imagine = Imagine()
 
 ALL_STYLE = list(Style.__members__.keys())
 ALL_RATIO = list(Ratio.__members__.keys())
@@ -37,6 +38,7 @@ class Args(BaseModel):
 
 
 def sdprem(args: Args, upscale: bool = False) -> Union[bytes, None]:
+    imagine = Imagine(style=Style.ANIME_V2)
     img_data = imagine.sdprem(**args.dict())
     if img_data is None:
         print('An error occurred while generating the image.')
@@ -51,8 +53,17 @@ def sdprem(args: Args, upscale: bool = False) -> Union[bytes, None]:
     return img_data
 
 
+def auth_by_token(token: str):
+    if not AUTH_TOKEN:
+        return
+    if token == AUTH_TOKEN:
+        return
+    raise HTTPException(status_code=403)
+
+
 @app.post('/imagine/sdprem')
-def imagine_sdprem(args: Args, upscale: bool = False):
+def imagine_sdprem(args: Args, upscale: bool = False, token: str = Header(None)):
+    auth_by_token(token)
     image_bytes: bytes = sdprem(args, upscale)
     if not image_bytes:
         raise HTTPException(status_code=503)
