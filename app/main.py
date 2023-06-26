@@ -3,27 +3,37 @@ from typing import Union
 
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import Response
-from imaginepy import Imagine, Style, Ratio
+from imaginepy import Imagine, Style, Ratio, Model
 from pydantic import BaseModel, validator
 
 AUTH_TOKEN = os.getenv('TOKEN', '')
 app = FastAPI()
+imagine = Imagine()
 
+ALL_MODEL = list(Model.__members__.keys())
 ALL_STYLE = list(Style.__members__.keys())
 ALL_RATIO = list(Ratio.__members__.keys())
 
 
 class Args(BaseModel):
     prompt: str
-    style: Union[str, None] = 'ANIME_V2'
-    ratio: Union[str, None] = 'RATIO_16X9'
     negative: Union[str, None] = None
-    priority: Union[str, None] = None
-    steps: Union[str, None] = None
-    high_res_results: Union[str, None] = None
+    model: str = 'V3'
+    style: Union[str, None] = None
     seed: Union[str, None] = None
+    ratio: Union[str, None] = 'RATIO_1X1'
     cfg: float = 9.5
+    priority: bool = True
+    high_result: bool = True
+    steps: int = 26
+    asbase64: bool = False
 
+    @validator('model')
+    def validate_model(cls, m):
+        if m not in ALL_MODEL:
+            raise ValueError(f'model err: {ALL_MODEL}')
+        return Model[m]
+    
     @validator('style')
     def validate_style(cls, s):
         if s not in ALL_STYLE:
@@ -38,7 +48,6 @@ class Args(BaseModel):
 
 
 def sdprem(args: Args, upscale: bool = False) -> Union[bytes, None]:
-    imagine = Imagine(style=Style.ANIME_V2)
     img_data = imagine.sdprem(**args.dict())
     if img_data is None:
         print('An error occurred while generating the image.')

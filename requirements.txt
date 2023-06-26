@@ -3,6 +3,9 @@ pydantic
 uvicorn
 aiohttp
 langdetect
+pybase64
 requests
 requests_toolbelt
+httpx
+pillow
 #imaginepy
